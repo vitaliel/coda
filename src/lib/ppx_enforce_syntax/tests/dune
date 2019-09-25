@@ -25,3 +25,24 @@
   (library_flags -linkall)
   (preprocess (pps ppx_bin_prot ppx_coda ppx_enforce_syntax))
   (modules bad_syntax_missing_bin_io))
+
+(library
+  (name bad_syntax_bin_io_in_functor)
+  (libraries core_kernel)
+  (library_flags -linkall)
+  (preprocess (pps ppx_bin_prot ppx_coda ppx_enforce_syntax))
+  (modules bad_syntax_bin_io_in_functor))
+
+(library
+  (name bad_syntax_version_in_functor)
+  (libraries core_kernel)
+  (library_flags -linkall)
+  (preprocess (pps ppx_bin_prot ppx_coda ppx_enforce_syntax))
+  (modules bad_syntax_version_in_functor))
+
+(library
+  (name bad_syntax_bin_io_in_nested_functor)
+  (libraries core_kernel)
+  (library_flags -linkall)
+  (preprocess (pps ppx_bin_prot ppx_coda ppx_enforce_syntax))
+  (modules bad_syntax_bin_io_in_nested_functor))
