@@ -1,7 +1,0 @@
-(library
-    (name ppx_enforce_syntax)
-    (public_name ppx_enforce_syntax)
-    (kind ppx_deriver)
-    (libraries ppxlib core_kernel)
-    (preprocess (pps ppxlib.metaquot)))
-

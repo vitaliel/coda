@@ -1,4 +1,4 @@
-(* enforce_deriving_usage.ml -- static enforcement of items in "deriving" attributes for types
+(* enforce_syntax.ml -- static enforcement of items relating to proper versioning
 
    - "deriving bin_io" never appears in types defined inside functor bodies
    - otherwise, "bin_io" may appear in a "deriving" attribute iff "version" appears in that extension
@@ -8,7 +8,7 @@
 open Core_kernel
 open Ppxlib
 
-let name = "enforce_deriving_usage"
+let name = "enforce_syntax"
 
 let is_ident ident item =
   let version_id id =
@@ -97,22 +97,16 @@ let validate_bin_io_and_version type_decl =
 (* traverse AST *)
 let check_deriving_usage =
   object (self)
-    inherit [bool] Ast_traverse.fold_map as super
+    inherit [bool] Ast_traverse.fold as super
 
     method! structure_item str in_functor =
       match str.pstr_desc with
-      | Pstr_module ({pmb_expr; _} as module_details) -> (
+      | Pstr_module {pmb_expr; _} -> (
         match pmb_expr.pmod_desc with
         | Pmod_structure structure ->
-            let results =
-              List.map structure ~f:(fun si ->
-                  self#structure_item si in_functor )
-            in
-            let _new_pmb_expr, _modules = List.unzip results in
-            let new_str =
-              {pstr_desc= Pstr_module module_details; pstr_loc= str.pstr_loc}
-            in
-            (new_str, in_functor)
+            List.iter structure ~f:(fun si ->
+                ignore (self#structure_item si in_functor) ) ;
+            in_functor
         | Pmod_functor (_name, _mod_type_opt, mod_exp) ->
             (* descend into functor body *)
             let rec find_functor_body mod_exp =
@@ -135,24 +129,28 @@ let check_deriving_usage =
             let functor_body = find_functor_body mod_exp in
             ignore
               (List.map functor_body ~f:(fun si -> self#structure_item si true)) ;
-            (str, in_functor)
+            in_functor
         | _ ->
-            (str, in_functor) )
+            in_functor )
       (* for type declaration, check attributes *)
       | Pstr_type (_rec_decl, type_decls) ->
           let f =
             if in_functor then validate_no_bin_io_or_version
             else validate_bin_io_and_version
           in
-          List.iter type_decls ~f ; (str, in_functor)
+          List.iter type_decls ~f ; in_functor
+      | Pstr_extension ((name, _payload), _attrs)
+        when String.equal name.txt "test_module" ->
+          (* don't check for invariants in test code *)
+          in_functor
       | _ ->
           super#structure_item str in_functor
   end
 
-let enforce_deriving_usage structure =
-  let new_structure, _in_functor =
-    check_deriving_usage#structure structure false
-  in
-  new_structure
+let enforce_deriving_usage str =
+  ignore (check_deriving_usage#structure str false) ;
+  str
 
 let () = Driver.register_transformation name ~impl:enforce_deriving_usage
+
+let () = Driver.standalone ()

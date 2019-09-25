@@ -1,0 +1,7 @@
+(executable
+ (package enforce_syntax)
+ (name enforce_syntax)
+ (public_name enforce_syntax)
+ (modes native)
+ (libraries ppxlib core_kernel)
+ (flags -short-paths -g -w @a-4-29-40-41-42-44-45-48-58-59-60))
