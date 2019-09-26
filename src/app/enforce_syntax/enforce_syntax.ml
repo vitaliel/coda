@@ -115,12 +115,14 @@ let check_deriving_usage =
                   str
               | Pmod_functor (_, _, mod_expr') ->
                   find_functor_body mod_expr'
-              | Pmod_apply (mod_exp1, _mod_exp2) ->
-                  (* disallow this construction, because we can't examine
-	             the contents of the resulting structure *)
-                  Location.raise_errorf ~loc:mod_exp1.pmod_loc
-                    "Functor application disallowed as body of functor, \
-                     because we don't know content of result"
+              | Pmod_apply (mod_exp1, mod_exp2) ->
+                  (* we don't know what the result of the application will be, so
+		     traverse the pieces of the application to find any errors, 
+		     return the empty structure
+		   *)
+                  ignore (self#module_expr mod_exp1 in_functor) ;
+                  ignore (self#module_expr mod_exp2 in_functor) ;
+                  []
               | _ ->
                   Location.raise_errorf ~loc:mod_exp.pmod_loc
                     "Don't know how to analyze this functor body"
