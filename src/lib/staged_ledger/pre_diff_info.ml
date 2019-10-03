@@ -18,6 +18,7 @@ module type S = sig
 
   val get :
        Staged_ledger_diff.t
+    -> State_body_hash.t
     -> ( Transaction.t list
          * Transaction_snark_work.t list
          * int
@@ -27,6 +28,7 @@ module type S = sig
 
   val get_unchecked :
        Staged_ledger_diff.With_valid_signatures_and_proofs.t
+    -> State_body_hash.t
     -> ( Transaction.t list
          * Transaction_snark_work.t list
          * int
@@ -35,7 +37,9 @@ module type S = sig
        result
 
   val get_transactions :
-    Staged_ledger_diff.t -> (Transaction.t list, Error.t) result
+       Staged_ledger_diff.t
+    -> State_body_hash.t
+    -> (Transaction.t list, Error.t) result
 end
 
 module Error = struct
@@ -248,7 +252,7 @@ let get_individual_info coinbase_parts proposer user_commands completed_works
 
 open Staged_ledger_diff
 
-let get' (t : With_valid_signatures.t) =
+let get' (t : With_valid_signatures.t) state_body_hash =
   let apply_pre_diff_with_at_most_two
       (t1 : With_valid_signatures.pre_diff_with_at_most_two_coinbase) =
     let coinbase_parts =
@@ -261,7 +265,7 @@ let get' (t : With_valid_signatures.t) =
           `Two x
     in
     get_individual_info coinbase_parts t.creator t1.user_commands
-      t1.completed_works t.state_body_hash
+      t1.completed_works state_body_hash
   in
   let apply_pre_diff_with_at_most_one
       (t2 : With_valid_signatures.pre_diff_with_at_most_one_coinbase) =
@@ -269,7 +273,7 @@ let get' (t : With_valid_signatures.t) =
       match t2.coinbase with Zero -> `Zero | One x -> `One x
     in
     get_individual_info coinbase_added t.creator t2.user_commands
-      t2.completed_works t.state_body_hash
+      t2.completed_works state_body_hash
   in
   let open Result.Let_syntax in
   let%bind p1 = apply_pre_diff_with_at_most_two (fst t.diff) in
@@ -285,10 +289,10 @@ let get' (t : With_valid_signatures.t) =
   , p1.user_commands_count + p2.user_commands_count
   , p1.coinbases @ p2.coinbases )
 
-let get t =
+let get t state_body_hash =
   match validate_user_commands t ~check:User_command.check with
   | Ok diff ->
-      get' diff
+      get' diff state_body_hash
   | Error uc ->
       Error (Error.Bad_signature uc)
 
@@ -296,7 +300,7 @@ let get_unchecked (t : With_valid_signatures_and_proofs.t) =
   let t = forget_proof_checks t in
   get' t
 
-let get_transactions (sl_diff : t) =
+let get_transactions (sl_diff : t) state_body_hash =
   let open Result.Let_syntax in
-  let%map transactions, _, _, _ = get sl_diff in
+  let%map transactions, _, _, _ = get sl_diff state_body_hash in
   transactions

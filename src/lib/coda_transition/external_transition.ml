@@ -738,12 +738,14 @@ module Staged_ledger_validation = struct
       Protocol_state.blockchain_state (protocol_state transition)
     in
     let staged_ledger_diff = staged_ledger_diff transition in
+    (* don't need real state body hash here, used only for pending coinbases *)
+    let state_body_hash = State_body_hash.dummy in
     let%bind ( `Hash_after_applying staged_ledger_hash
              , `Ledger_proof proof_opt
              , `Staged_ledger transitioned_staged_ledger
              , `Pending_coinbase_data _ ) =
       Staged_ledger.apply ~logger ~verifier parent_staged_ledger
-        staged_ledger_diff
+        staged_ledger_diff state_body_hash
       |> Deferred.Result.map_error ~f:(fun e ->
              `Staged_ledger_application_failed e )
     in

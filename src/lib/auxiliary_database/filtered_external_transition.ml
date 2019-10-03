@@ -94,10 +94,13 @@ let of_transition tracked_participants external_transition =
         Coda_state.Protocol_state.blockchain_state
         @@ protocol_state external_transition }
   in
+  (* real state body hash is used only for pending coinbases *)
+  let state_body_hash = State_body_hash.dummy in
   let open Result.Let_syntax in
   let staged_ledger_diff = staged_ledger_diff external_transition in
   let%map calculated_transactions =
     Staged_ledger.Pre_diff_info.get_transactions staged_ledger_diff
+      state_body_hash
   in
   let transactions =
     List.fold calculated_transactions

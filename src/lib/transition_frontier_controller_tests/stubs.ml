@@ -145,15 +145,16 @@ struct
       let staged_ledger_diff =
         Staged_ledger.create_diff parent_staged_ledger ~logger
           ~self:largest_account_public_key ~transactions_by_fee:transactions
-          ~get_completed_work ~state_body_hash:State_body_hash.dummy
+          ~get_completed_work
       in
+      let state_body_hash = State_body_hash.dummy in
       let%bind ( `Hash_after_applying next_staged_ledger_hash
                , `Ledger_proof ledger_proof_opt
                , `Staged_ledger _
                , `Pending_coinbase_data _ ) =
         match%bind
           Staged_ledger.apply_diff_unchecked parent_staged_ledger
-            staged_ledger_diff
+            staged_ledger_diff state_body_hash
         with
         | Ok r ->
             return r
@@ -270,8 +271,7 @@ struct
             ; user_commands= []
             ; coinbase= Staged_ledger_diff.At_most_two.Zero }
           , None )
-      ; creator
-      ; state_body_hash= State_body_hash.dummy }
+      ; creator }
     in
     (* the genesis transition is assumed to be valid *)
     let (`I_swear_this_is_safe_see_my_comment root_transition) =
