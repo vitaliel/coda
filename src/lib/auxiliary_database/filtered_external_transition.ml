@@ -88,14 +88,16 @@ let user_commands {transactions= {Transactions.user_commands; _}; _} =
 let of_transition tracked_participants external_transition =
   let open External_transition.Validated in
   let creator = proposer external_transition in
+  let state_body_hash =
+    let open Coda_state.Protocol_state in
+    Body.hash @@ body @@ protocol_state external_transition
+  in
   let protocol_state =
     { Protocol_state.previous_state_hash= parent_hash external_transition
     ; blockchain_state=
         Coda_state.Protocol_state.blockchain_state
         @@ protocol_state external_transition }
   in
-  (* real state body hash is used only for pending coinbases *)
-  let state_body_hash = State_body_hash.dummy in
   let open Result.Let_syntax in
   let staged_ledger_diff = staged_ledger_diff external_transition in
   let%map calculated_transactions =

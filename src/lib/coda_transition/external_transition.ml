@@ -738,8 +738,10 @@ module Staged_ledger_validation = struct
       Protocol_state.blockchain_state (protocol_state transition)
     in
     let staged_ledger_diff = staged_ledger_diff transition in
-    (* don't need real state body hash here, used only for pending coinbases *)
-    let state_body_hash = State_body_hash.dummy in
+    let state_body_hash =
+      let open Coda_state.Protocol_state in
+      Body.hash @@ body @@ protocol_state transition
+    in
     let%bind ( `Hash_after_applying staged_ledger_hash
              , `Ledger_proof proof_opt
              , `Staged_ledger transitioned_staged_ledger
